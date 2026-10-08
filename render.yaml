@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: health-backend
+    runtime: docker
+    healthCheckPath: /healthz
+    envVars:
+      - key: API_TOKEN
+        sync: false          # set the secret value in the Render dashboard
+      - key: DB_PATH
+        value: /data/health.db
+    disk:
+      name: health-data
+      mountPath: /data
+      sizeGB: 1
