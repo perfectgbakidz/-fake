@@ -6,10 +6,18 @@ from datetime import datetime, timezone
 from typing import Iterator, Optional
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
 DB_PATH = os.getenv("DB_PATH", "health.db")
 API_TOKEN = os.getenv("API_TOKEN")
+
+# Comma-separated list of allowed frontend origins, e.g.
+# "https://yourname.github.io,http://localhost:5500"
+# Defaults to "*" (any origin) if not set.
+ALLOWED_ORIGINS = [
+    o.strip() for o in os.getenv("ALLOWED_ORIGINS", "*").split(",") if o.strip()
+]
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS readings (
@@ -49,6 +57,19 @@ app = FastAPI(
     description="Receives simulated health readings from ESP32-CAM devices.",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+# ------------------------------- CORS -----------------------------------
+# Must be added before routes are served. Lets the browser frontend call
+# the API, including the preflight OPTIONS request sent for requests
+# that carry an Authorization header.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=False,          # we use a Bearer token, not cookies
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+    max_age=600,                      # cache preflight results for 10 minutes
 )
 
 
